@@ -15,7 +15,9 @@ async function getMembership(user: { userId: string; email?: string; name?: stri
   const [saved] = await db.get<Membership>('hymnora_user_workspace', [user.userId]);
   if (saved) return saved;
   const workspaceId = `w_${user.userId.replace(/[^a-zA-Z0-9_-]/g, '')}`;
-  await db.tx.add('hymnora_workspaces', [{ id: workspaceId, name: user.name ? `${user.name}'s Church` : 'My Church', ownerId: user.userId, createdAt: new Date().toISOString() }]);
+  const createdAt = new Date().toISOString();
+  const trialEndsAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+  await db.tx.add('hymnora_workspaces', [{ id: workspaceId, name: user.name ? `${user.name}'s Church` : 'My Church', ownerId: user.userId, createdAt, subscription: { plan: 'free', status: 'trial', trialDays: 30, trialStartedAt: createdAt, trialEndsAt, billingProvider: 'not_configured' } }]);
   await db.tx.add('hymnora_user_workspace', [{ id: user.userId, workspaceId, role: 'owner', email: user.email || '', joinedAt: new Date().toISOString() }]);
   const [created] = await db.get<Membership>('hymnora_user_workspace', [user.userId], { consistent: true });
   if (!created) throw new Error('Workspace setup could not be completed');
@@ -35,6 +37,27 @@ export const handler = router({
     const m = await getMembership(user!);
     const [workspace] = await db.get<{ name: string }>('hymnora_workspaces', [m.workspaceId]);
     return json({ user: { userId: user!.userId, email: user!.email, name: user!.name }, workspaceId: m.workspaceId, workspaceName: workspace?.name || 'Church workspace', role: m.role });
+  }],
+  'GET /api/billing': [requireAuth(), async ({ user }) => {
+    const m = await getMembership(user!);
+    const [workspace] = await db.get<{ subscription?: { plan?: string; status?: string; trialDays?: number; trialStartedAt?: string; trialEndsAt?: string; billingProvider?: string } }>('hymnora_workspaces', [m.workspaceId]);
+    const subscription = workspace?.subscription || { plan: 'free', status: 'free', billingProvider: 'not_configured' };
+    const trialDaysRemaining = subscription.trialEndsAt ? Math.max(0, Math.ceil((new Date(subscription.trialEndsAt).getTime() - Date.now()) / 86400000)) : 0;
+    return json({ subscription, trialDaysRemaining, paymentProvider: 'not_configured', plans: [
+      { id: 'free', name: 'Free', description: 'For small ministries getting started', features: ['Basic worship presentation', 'Limited song and event library', 'Basic attendee registration'] },
+      { id: 'starter', name: 'Starter', description: 'For growing local churches', features: ['Expanded worship and event tools', 'Church calendar and registrations', 'Basic team collaboration'] },
+      { id: 'professional', name: 'Professional', description: 'For active churches and media teams', features: ['AI scripture assistant', 'Social publishing workspace', 'Email and messaging campaign tools', 'Attendance insights'] },
+      { id: 'enterprise', name: 'Enterprise', description: 'For multi-campus ministries', features: ['Multiple campuses and workspaces', 'Advanced access controls', 'Integration support', 'Priority support'] }
+    ] });
+  }],
+  'POST /api/billing/plan': [requireAuth(), async ({ body, user }) => {
+    const m = await getMembership(user!);
+    if (!can(m.role, ['owner', 'admin'])) return error('Only workspace owners and administrators can request a plan change', 403);
+    const input = (body || {}) as { plan?: string };
+    if (!['free', 'starter', 'professional', 'enterprise'].includes(input.plan || '')) return error('Choose a valid Hymnora plan', 400);
+    const [requestId] = await db.add(table('hymnora_billing_requests', m.workspaceId), [{ plan: input.plan, requestedBy: user!.userId, status: input.plan === 'free' ? 'free_plan_request' : 'awaiting_payment_provider', createdAt: new Date().toISOString() }]);
+    if (!requestId) return error('Unable to save your plan request', 503);
+    return json({ requestId, requestedPlan: input.plan, status: input.plan === 'free' ? 'free_plan_request' : 'awaiting_payment_provider', message: 'Your plan selection has been saved. Online checkout will become available after a payment provider is connected.' }, 201);
   }],
   'GET /api/songs': [requireAuth(), async ({ user }) => {
     const m = await getMembership(user!);
