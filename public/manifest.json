@@ -1,0 +1,11 @@
+{
+  "name": "Hymnora by Clouddice Digital",
+  "short_name": "Hymnora",
+  "description": "Church worship, scripture discovery and ministry connections.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f7f8fc",
+  "theme_color": "#5141a6",
+  "icons": []
+}
