@@ -48,15 +48,23 @@ npm run dev
 - POST /api/scripture/suggest
 - GET /api/_healthcheck
 
-## Product roadmap
+## Commercial model
 
-- Authenticated multi-church tenancy and role permissions.
-- Licensed lyric provider and song recognition integrations.
-- Live speech transcription and scripture cueing during sermon ministration.
-- Bible translation provider and verse display.
-- Social OAuth integrations and scheduling.
-- Email, SMS and WhatsApp provider integrations.
-- QR tickets, check-in, attendance and follow-up automation.
-- Dedicated desktop wrappers and app store packaging.
+Hymnora uses a hybrid commercial model under Clouddice Digital: a free tier, paid Starter, Professional and Enterprise plans, plus a 30-day trial for newly created church workspaces. The application currently records plan requests but does not collect payments. Stripe or another supported payment provider, webhook verification, invoices, tax handling, renewals, cancellations and paid-feature enforcement must be configured and tested before commercial billing is enabled.
+
+## Integration status and roadmap
+
+- **Implemented foundation:** authenticated multi-church workspaces, role permissions, invitation links, protected APIs, attendee consent, privacy export/deletion and basic anti-spam controls.
+- **Billing foundation:** hybrid plan catalogue, 30-day trial metadata and owner-only plan requests. Payment checkout is not connected.
+- **Lyrics:** licensed lyric provider and song recognition integrations. Do not scrape or reproduce copyrighted song lyrics without permission.
+- **Live worship and scripture:** speech transcription, lyric cueing, Bible translation provider and verse display.
+- **Social publishing:** OAuth integrations and scheduling for Meta, TikTok, YouTube, Spotify, X and Threads. Each provider requires app registration, review, scopes and credentials.
+- **Communications:** email, SMS and WhatsApp provider integrations, verified sender identities, opt-out handling and consent enforcement.
+- **Events:** QR tickets, check-in, attendance and follow-up automation.
+- **Distribution:** dedicated signed Windows/macOS installers and Android/iOS store packaging. The existing PWA is the current installable option.
+
+## Production release gates
+
+Before paid launch, complete payment-provider integration and webhook tests; independent security review and tenant-isolation tests; CAPTCHA and durable rate-limit validation; retention/deletion policies; privacy notices and terms; and provider-specific approval for lyrics, Bible text, social publishing and messaging.
 
 Built by **Clouddice Digital**.
