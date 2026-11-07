@@ -1,0 +1,19 @@
+{
+  "methods": [
+    "google",
+    "apple",
+    "x",
+    "email"
+  ],
+  "headline": "Sign in to Hymnora",
+  "subtitle": "Secure access for your church team.",
+  "style": {
+    "mode": "light",
+    "accentColor": "#5141a6",
+    "backgroundColor": "#f7f8fc",
+    "panelColor": "#ffffff",
+    "textColor": "#24213f",
+    "fontFamily": "DM Sans, system-ui, sans-serif",
+    "borderRadius": 16
+  }
+}
